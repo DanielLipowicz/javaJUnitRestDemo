@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "booking",
+  "type": "array",
+  "items": {
+    "title": "bookings",
+    "type": "object",
+    "properties": {
+      "bookingid": {
+        "description": "The unique identifier for a booking",
+        "type": "number"
+      }
+    },
+    "required": ["bookingid"]
+  }
+}
