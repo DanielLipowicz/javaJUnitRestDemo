@@ -1,20 +1,17 @@
 package specs.functional;
 
-import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.Cookie;
 import org.junit.Before;
 import org.junit.Test;
 import RestfulBooker.RestfulBooker;
 
 
-import javax.xml.crypto.Data;
-import java.util.Date;
-
-import static io.restassured.RestAssured.expect;
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 
 public class RestfulBookerTest {
     private RestfulBooker restBooker;
@@ -24,7 +21,7 @@ public class RestfulBookerTest {
     public void createRestfulBookerTestObject() {
         restBooker = new RestfulBooker();
     }
-//    As User I want to create+, read+-, update- and delete- booking on https://restful-booker.herokuapp.com/
+//    As User I want to create+, read+-, update+ and delete- booking on https://restful-booker.herokuapp.com/
 
     @Test
     public void checkingAppAvailabilityBooking() {
@@ -37,7 +34,17 @@ public class RestfulBookerTest {
     public void getAllBooking() {
         // As a user I should be able to read all bookings id
         when().get(restBooker.bookingUrl)
-                .then().assertThat().body(matchesJsonSchemaInClasspath("./booking-schema.json"));
+                .then().assertThat()
+                .body(matchesJsonSchemaInClasspath("booking-get-all-schema.json"))
+                .body("bookingid",hasItems(1));
+    }
+    @Test
+    public void getOneBooking() {
+        // As a user I should be able to read all bookings id
+        when().get(restBooker.getBookingUrlForBookingId(1))
+                .then().assertThat()
+                .body(matchesJsonSchemaInClasspath("./booking-get-one-res-schema"))
+                .body("size()",is(6));
     }
 
     @Test
@@ -57,29 +64,20 @@ public class RestfulBookerTest {
     @Test
     public void editBooking() {
         // As a user i should be able to edit my posted booking
-        int bookingId = restBooker.getBookingIdFromPostResponse(
-                //create booking for test purpose
-                given()
-                        .request()
-                        .headers("Content-Type", "application/json")
-                        .body(restBooker.getExampleOfBookingPostRequest())
-                        .post(restBooker.bookingUrl).body().print());
-
-        String authResponseToken = restBooker.getAuthTokenFromAuthRequest(authResponse);
-
+        //create booking for test purpose and create token from api
+        int bookingId = restBooker.sendNewBookingRequest();
         Cookie tokenCookie =
-                new Cookie.Builder("token", authResponseToken)
+                new Cookie.Builder("token", restBooker.getAuthToken())
                         .setDomain("restful-booker.herokuapp.com")
                         .setPath("/").setHttpOnly(false).setSecured(false).build();
-        System.out.println(tokenCookie.toString());
+
         given()
                 .headers("Content-Type", "application/json")
-                .cookies("token", authResponseToken)
                 .cookie(tokenCookie)
-                .body(restBooker.getAndModifyExampleOfBookingPostRequest("firstname", "Danny"))
+                .body(restBooker.getModifiedExampleBookingPostRequest("firstname", "Danny"))
                 .when()
                 .put(restBooker.getBookingUrlForBookingId(bookingId))
-                .then().assertThat().log().all().statusCode(200)
+                .then().assertThat().statusCode(200)
                 .body("firstname", equalTo("Danny"));
     }
 

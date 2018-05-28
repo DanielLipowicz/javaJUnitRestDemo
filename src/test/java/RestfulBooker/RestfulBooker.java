@@ -16,43 +16,64 @@ public class RestfulBooker {
     public String authUrl = this.baseUrl.concat("auth");
 
     public RestfulBooker() {
-
     }
 
     public String getExampleOfBookingPostRequest() {
         return getFile("./booking-post-req-example.json");
     }
 
-    public String getAndModifyExampleOfBookingPostRequest(String attribute, String newValue){
-        JSONObject modifiedJson = new JSONObject(this.getExampleOfBookingPostRequest()).put(attribute,newValue);
-        return modifiedJson.toString();
-    }
-    public String getAndModifyExampleOfBookingPostRequest(String attribute, Number newValue){
-        JSONObject modifiedJson = new JSONObject(this.getExampleOfBookingPostRequest()).put(attribute,newValue);
-        return modifiedJson.toString();
-    }
-
-    public String getBookingUrlForBookingId(int bookingId){
-        return this.bookingUrl.concat("/").concat(String.valueOf(bookingId));
-    }
     public String getExampleOfUserAuthorization() {
         return getFile("./booking-post-auth-req.json");
+    }
+
+    public String getBookingUrlForBookingId(int bookingId) {
+        return this.bookingUrl.concat("/").concat(String.valueOf(bookingId));
     }
 
     public int getBookingIdFromPostResponse(String bookingPostResponse) {
         return new JSONObject(bookingPostResponse).getInt("bookingid");
     }
 
-    public String getAuthTokenFromAuthRequest(String authPostResponse) {
+    public String getAuthToken() {
+        return this.extractAuthToken(this.getAuthRequestResponse());
+    }
+
+    public int sendNewBookingRequest() {
+        return this.getBookingIdFromPostResponse(getBookingRequestResponse());
+    }
+
+    public String getModifiedExampleBookingPostRequest(String attributeToReplace, String newValue) {
+        JSONObject modifiedJson = new JSONObject(this.getExampleOfBookingPostRequest()).put(attributeToReplace, newValue);
+        return modifiedJson.toString();
+    }
+
+    public String getModifiedExampleBookingPostRequest(String attributeToReplace, Number newValue) {
+        JSONObject modifiedJson = new JSONObject(this.getExampleOfBookingPostRequest()).put(attributeToReplace, newValue);
+        return modifiedJson.toString();
+    }
+
+    public String getModifiedExampleBookingPostRequest(String attributeToReplace, boolean newValue) {
+        JSONObject modifiedJson = new JSONObject(this.getExampleOfBookingPostRequest()).put(attributeToReplace, newValue);
+        return modifiedJson.toString();
+    }
+
+    private String extractAuthToken(String authPostResponse) {
         return new JSONObject(authPostResponse).getString("token");
     }
 
-    public String getAuthToken(){
-        this.getAuthTokenFromAuthRequest(given()
+    private String performRequest(String postUrl, String body) {
+        return given()
                 .request().headers("Content-Type", "application/json")
-                .body(this.getExampleOfUserAuthorization())
-                .post(this.authUrl).body().print()
-        );
+                .body(body)
+                .post(postUrl).body().print();
+    }
+
+    private String getAuthRequestResponse() {
+        return this.performRequest(this.authUrl, this.getExampleOfUserAuthorization());
+    }
+
+    private String getBookingRequestResponse() {
+        return this.performRequest(this.bookingUrl, this.getExampleOfBookingPostRequest());
     }
 
     private String getFile(String fileName) {
@@ -74,6 +95,4 @@ public class RestfulBooker {
         return result.toString();
 
     }
-
-
 }
